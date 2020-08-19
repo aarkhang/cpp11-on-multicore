@@ -39,9 +39,10 @@ public:
         CloseHandle(m_hSema);
     }
 
-    void wait()
+    bool wait(int timeout = -1)
     {
-        WaitForSingleObject(m_hSema, INFINITE);
+        unsigned tmo = timeout < 0 ? INFINITE : timeout * 1000;
+        return WaitForSingleObject(m_hSema, tmo) == WAIT_OBJECT_0;
     }
 
     void signal(int count = 1)
