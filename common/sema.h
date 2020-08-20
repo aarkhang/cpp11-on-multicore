@@ -80,9 +80,10 @@ public:
         semaphore_destroy(mach_task_self(), m_sema);
     }
 
-    void wait()
+    bool wait(int timeout = 1)
     {
         semaphore_wait(m_sema);
+        return true;
     }
 
     void signal()
@@ -127,15 +128,20 @@ public:
         sem_destroy(&m_sema);
     }
 
-    void wait()
+    bool wait(int timeout = -1)
     {
         // http://stackoverflow.com/questions/2013181/gdb-causes-sem-wait-to-fail-with-eintr-error
         int rc;
+        struct timespec abs_timeout;
+        if (timeout >= 0 && clock_gettime(CLOCK_REALTIME, &abs_timeout) == -1)
+               return false;
+        abs_timeout.tv_sec += timeout;
         do
         {
-            rc = sem_wait(&m_sema);
+            rc = timeout < 0 ? sem_wait(&m_sema) : sem_timedwait(&m_sema, &abs_timeout);
         }
         while (rc == -1 && errno == EINTR);
+        return (rc == 0);
     }
 
     void signal()
